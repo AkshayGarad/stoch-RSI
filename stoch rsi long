@@ -1,21 +1,35 @@
-//@version=4
-strategy("Stochastic RSI Strategy", overlay=true)
+//@version=5
+strategy("Stoch RSI Crossover Strategy", shorttitle="Stoch RSI Strategy", overlay=true)
 
-// Stochastic RSI parameters
-length = input(14, title="Stochastic RSI Length")
-overbought = input(80, title="Overbought Threshold")
-oversold = input(20, title="Oversold Threshold")
+// Indicator Inputs
+smoothK = input.int(3, "K", minval=1)
+smoothD = input.int(3, "D", minval=1)
+lengthRSI = input.int(14, "RSI Length", minval=1)
+lengthStoch = input.int(14, "Stochastic Length", minval=1)
+src = input(close, title="RSI Source")
 
-// Stochastic RSI calculation
-stochrsi = sma(stoch(close, close, close, length), 3)
+// Calculate RSI and Stochastic RSI
+rsi1 = ta.rsi(src, lengthRSI)
+k = ta.sma(ta.stoch(rsi1, rsi1, rsi1, lengthStoch), smoothK)
+d = ta.sma(k, smoothD)
 
-// Conditions for buy and sell signals
-longCondition = crossover(stochrsi, oversold)
-shortCondition = crossunder(stochrsi, overbought)
+// Define Overbought and Oversold Levels
+overbought = 80
+oversold = 20
 
-// Plotting the Stochastic RSI
-plot(stochrsi, title="Stochastic RSI", color=color.blue)
+// Buy Condition
+buy_condition = ta.crossover(k, d) and k < oversold
 
-// Strategy orders
-strategy.entry("Buy", strategy.long, when=longCondition)
-strategy.close("Buy", when=shortCondition)
+// Close Buy Position Condition
+close_buy_condition = ta.crossunder(k, d)
+
+// Plot Buy and Close Signals
+plotshape(buy_condition ? 1 : na, style=shape.triangleup, location=location.belowbar, color=color.green, size=size.small)
+plotshape(close_buy_condition ? 1 : na, style=shape.triangledown, location=location.abovebar, color=color.red, size=size.small)
+
+// Strategy Entry and Exit
+if (buy_condition)
+    strategy.entry("Buy", strategy.long)
+
+if (close_buy_condition)
+    strategy.close("Buy")
