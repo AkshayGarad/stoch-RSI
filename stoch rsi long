@@ -1,0 +1,21 @@
+//@version=4
+strategy("Stochastic RSI Strategy", overlay=true)
+
+// Stochastic RSI parameters
+length = input(14, title="Stochastic RSI Length")
+overbought = input(80, title="Overbought Threshold")
+oversold = input(20, title="Oversold Threshold")
+
+// Stochastic RSI calculation
+stochrsi = sma(stoch(close, close, close, length), 3)
+
+// Conditions for buy and sell signals
+longCondition = crossover(stochrsi, oversold)
+shortCondition = crossunder(stochrsi, overbought)
+
+// Plotting the Stochastic RSI
+plot(stochrsi, title="Stochastic RSI", color=color.blue)
+
+// Strategy orders
+strategy.entry("Buy", strategy.long, when=longCondition)
+strategy.close("Buy", when=shortCondition)
