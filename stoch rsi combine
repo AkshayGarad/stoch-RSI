@@ -1,0 +1,51 @@
+//@version=5
+strategy("Combined Stochastic RSI Strategies", shorttitle="Combined SRS", overlay=true)
+
+// Indicator Inputs
+smoothK = input.int(3, "K", minval=1)
+smoothD = input.int(3, "D", minval=1)
+lengthRSI = input.int(14, "RSI Length", minval=1)
+lengthStoch = input.int(14, "Stochastic Length", minval=1)
+src = input(close, title="RSI Source")
+overboughtLevel = input.float(80, "Upper Band")
+oversoldLevel = input.float(20, "Lower Band")
+
+// Calculate RSI and Stochastic RSI
+rsi1 = ta.rsi(src, lengthRSI)
+k = ta.sma(ta.stoch(rsi1, rsi1, rsi1, lengthStoch), smoothK)
+d = ta.sma(k, smoothD)
+
+// Define Overbought and Oversold Levels (for the first strategy)
+overbought1 = 80
+oversold1 = 20
+
+// Buy Condition (from the first strategy)
+buy_condition = ta.crossover(k, d) and k < oversold1
+
+// Close Buy Position Condition (from the first strategy)
+close_buy_condition = ta.crossunder(k, d)
+
+// Define entry and exit conditions (from the second strategy)
+crossAboveOverbought = k[1] > overboughtLevel and k < overboughtLevel and d[1] > overboughtLevel and d < overboughtLevel
+crossoverExit = ta.crossover(k, d)
+
+// Plot Buy and Close Signals (from the first strategy)
+plotshape(buy_condition ? 1 : na, style=shape.triangleup, location=location.belowbar, color=color.green, size=size.small)
+plotshape(close_buy_condition ? 1 : na, style=shape.triangledown, location=location.abovebar, color=color.red, size=size.small)
+
+// Plotting the signals (from the second strategy)
+plotshape(crossAboveOverbought, style=shape.triangleup, location=location.abovebar, color=color.red, size=size.small, title="Short Entry")
+plotshape(crossoverExit, style=shape.triangledown, location=location.abovebar, color=color.green, size=size.small, title="Exit Short")
+
+// Strategy Logic
+if (buy_condition)
+    strategy.entry("Buy", strategy.long)
+
+if (close_buy_condition)
+    strategy.close("Buy")
+
+if (crossAboveOverbought)
+    strategy.entry("Short", strategy.short)
+
+if (crossoverExit)
+    strategy.close("Short")
