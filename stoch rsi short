@@ -1,0 +1,31 @@
+//@version=5
+strategy("Stochastic RSI Strategy", shorttitle="SRS", overlay=true)
+
+// Indicator Inputs
+smoothK = input.int(3, "K", minval=1)
+smoothD = input.int(3, "D", minval=1)
+lengthRSI = input.int(14, "RSI Length", minval=1)
+lengthStoch = input.int(14, "Stochastic Length", minval=1)
+overboughtLevel = input.float(80, "Upper Band")
+oversoldLevel = input.float(20, "Lower Band")
+src = input(close, title="RSI Source")
+
+// Calculate RSI and Stochastic RSI
+rsi1 = ta.rsi(src, lengthRSI)
+k = ta.sma(ta.stoch(rsi1, rsi1, rsi1, lengthStoch), smoothK)
+d = ta.sma(k, smoothD)
+
+// Define entry and exit conditions
+crossAboveOverbought = k[1] > overboughtLevel and k < overboughtLevel and d[1] > overboughtLevel and d < overboughtLevel
+crossoverExit = ta.crossover(k, d)
+
+// Plotting the signals
+plotshape(crossAboveOverbought, style=shape.triangleup, location=location.abovebar, color=color.red, size=size.small, title="Short Entry")
+plotshape(crossoverExit, style=shape.triangledown, location=location.abovebar, color=color.green, size=size.small, title="Exit Short")
+
+// Strategy Logic
+if (crossAboveOverbought)
+    strategy.entry("Short", strategy.short)
+
+if (crossoverExit)
+    strategy.close("Short")
